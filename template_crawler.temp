@@ -1,0 +1,25 @@
+
+#####
+
+# このファイルはコピペするテンプレート用です
+
+#####
+from const import *
+from ipat_crawl_selenium_driver import IpatCrawlSeleniumDriver
+from selenium.webdriver.common.by import By
+
+class TemplateCrawler(IpatCrawlSeleniumDriver) :
+    def __init__(self, mode : IpatModeEnum):
+        self.target_url = 'xxxxxxxxxxxxxxxxxxx'
+
+        super().__init__(mode, locale)
+
+    def __del__(self):
+        return super().__del__()
+
+    def login(self) :
+        self.driver.get(self.target_url)
+
+        # 加入者情報と暗証番号
+        
+
