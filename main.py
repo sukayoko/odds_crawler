@@ -4,64 +4,129 @@ from const import *
 from local_config import LocalConfig
 from ipat_selenium_driver import IpatSeleniumDriver
 from datetime import datetime, timedelta
-
+from selenium.webdriver.common.by import By
 
 def main() :
-    # ここから
-    RACE_INFO_URL = (
-        "https://www.keiba.go.jp/KeibaWeb_IPAT/TodayRaceInfo/TodayRaceInfoTop_ipat"
-    )
+    # 一定時間ごとに crawl ?
 
-    # プログラムの実行時間範囲と実行間隔
-    START_HOUR = 9
-    END_HOUR = 22
-    
-    INTERVAL_MINUTES = 1
+
+    main_loop()
+
+
+
+def jra_odds_crawl() :
+    chromeDriver = IpatSeleniumDriver(resource_path("temp"))
+    chromeDriver.driver.get("https://www.jra.go.jp/keiba/")
+
+    chromeDriver.click_element_by_a_text("オッズ")
+
+    # 今週のオッズ配下に開催一覧がある
+    kaisai_elem = chromeDriver.get_element_by_class(chromeDriver.driver, "thisweek")
+    if (kaisai_elem != None) :
+        panel_elems = chromeDriver.get_elements_by_class(kaisai_elem, "panel")
+
+        # 巡回リストを作成 Ex. ['5回中山7日', '5回阪神7日', '5回中山8日', '5回阪神8日', '5回中山9日', '5回阪神9日']
+        crawl_ba_list = []
+
+        # 開催日毎、場毎にページがある
+        for p_elem in panel_elems :
+            title_elem = chromeDriver.get_element_by_class(p_elem, "sub_header")
+            # print(title_elem.text)
+            chromeDriver.print_element_by_a_text(p_elem)
+
+            for ba_elem in chromeDriver.get_ba_list_from_atag(p_elem) :
+                crawl_ba_list.append(ba_elem)
+
+        # ここで一回画面遷移しないとエラーになってしまう。。
+        chromeDriver.click_element_by_a_text(crawl_ba_list[0])
+        # print(crawl_ba_list)
+
+        for ba_i in range(len(crawl_ba_list)):
+            # 順番にオッズページを確認
+            # 開催場名の一覧を取り直してクリック
+            ul_elem = chromeDriver.get_element_by_class(chromeDriver.driver, "data_line_list")
+            ba_elem_list = chromeDriver.get_ba_list_from_oddspage(ul_elem)
+            ba_elem_list[ba_i].click()
+
+            tanpuku_elem = chromeDriver.get_element_by_class(chromeDriver.driver, "tanpuku")
+            # TODO もし存在すれば
+            tanpuku_elem.click()     
+
+            # 次のレース
+            race_num_list = chromeDriver.get_race_list_from_page()
+            for i in range(len(race_num_list)):
+                ### 先頭にヘッダも入る "単勝"
+                ### TODO 取り消しの場合　"取消"　が入るはず　
+                # 1レース目だけ行けたらOK 次のページでオッズ、場の一覧が見れるので
+                ### オッズ一覧のページ
+                # 単勝オッズ取る この処理は早すぎるとダメっぽい
+                # time.sleep(1)
+
+                 # テーブルから取得
+                result = chromeDriver.get_odds_list_from_table(chromeDriver.driver, "odds_tan")
+
+                # 数字の文字列ではないものは 0.0 に変換
+                for k in range(len(result)):
+                    try:
+                        float(result[k])
+                    except ValueError:
+                        result[k] = "0.0"
+                print(",".join(result))
+
+                ### ワイドへ移動
+                # chromeDriver.click_element_by_a_text("ワイド")
+
+                # 毎回取得しなおす
+                race_num_list = chromeDriver.get_race_list_from_page()
+                race_num_list[i].click()
+            
+            # CHECK TODO もしオッズがまだない状態だとどうなる？？
+
+    # driverを定期的に作り直さないとプロセスが残り続けてしまう？終了処理
+    chromeDriver.end()
+
+def main_loop() :
 
     init_flag = True
 
     # 起動メッセージ
-    print("地方レース情報通知ツールを起動しました。")
-    print(f"実行時間は毎日 {START_HOUR}:00～{END_HOUR+1}:00 の間です。")
+    print("起動メッセージ")
+    print(f"実行時間は毎日 {START_HOUR}:00～{END_HOUR}:00 の間です。")
 
-    # 9:00～22:59 以外は休止
+    bef_exec_now = time.time() - (INTERVAL_MINUTES * 60 * 1000)
+    # 指定した時間以外は休止
     ###  定期的に実行
     while True:
-        # driverを定期的に作り直さないとプロセスが残り続けてしまう？初期化処理
-        chromeDriver = IpatSeleniumDriver(resource_path("temp"))
+        
         now = datetime.now()
         current_hour = now.hour
         current_minute = now.minute
+
+        cur_exec_now = time.time()
         
         if START_HOUR <= current_hour <= END_HOUR:
-            if current_hour == START_HOUR and current_minute < INTERVAL_MINUTES:
-                # 処理を開始するために少し待機
-                time.sleep((INTERVAL_MINUTES - current_minute) * 60)
-
             # 当日初回実行の場合は tempディレクトリは以下を削除する。
             if init_flag:
-                initialize()
-
-                # とりあえず 名古屋 11R
-                # ファイル作成
-
-
+                # initialize()
                 init_flag = False
 
-            # オッズを取得してファイルを更新
-            # 本日のレース情報を取得して tempファイルに保存する
-            chromeDriver.get_race_info(RACE_INFO_URL)
+            # 前回実行時から一定間隔あいたら実行する
+            if ( (cur_exec_now - bef_exec_now) > (INTERVAL_MINUTES * 60)):
+                bef_exec_now = cur_exec_now
+                # オッズを取得
+                # driverを定期的に作り直さないとプロセスが残り続けてしまう？初期化処理
+                jra_odds_crawl()
 
             # 次の処理実行まで待機
-            time.sleep(INTERVAL_MINUTES * 60)
+            time.sleep(1)
 
         # 時間外になったら初期化フラグオフ
         else:
             init_flag = True
             time.sleep(INTERVAL_MINUTES * 60)
 
-        # driverを定期的に作り直さないとプロセスが残り続けてしまう？終了処理
-        # chromeDriver.end()
+
+        # break
     ### while メインループここまで
 
 
@@ -98,20 +163,6 @@ if __name__ == "__main__":
 
     # オプションの設定
     parser = argparse.ArgumentParser(description='oddsの取得')
-    # テストか開催か mode の設定
-    # TODO: 設定を初期化するinit があってもいい？
-    parser.add_argument('-m', '--mode', choices=['test', 'normal'], default='test', help='Specify a mode test or normal. default test.')
-    # 中央か地方か locale の設定
-    parser.add_argument('-l', '--locale', choices=['center', 'national'], default='center', help='Specify a locale center or national. default center.')
-    # 国際含むかどうか
-    # TODO
-    # 実施パターン 複数指定可能
-    parser.add_argument('-p', '--pattern', nargs='+', choices=['all', 'galaho', 'limit', 'umaca'], default='all', help='choise')
-    args = parser.parse_args()
-
-    print(f"Selected mode: {args.mode}")
-    print(f"Selected locale: {args.locale}")
-    print(f"Selected pattern: {args.pattern}")
 
     main()
 

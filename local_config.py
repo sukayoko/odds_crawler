@@ -4,7 +4,6 @@ from cryptography.fernet import Fernet
 import configparser
 from const import *
 
-
 # Selenium クラス
 class LocalConfig:
     # 設定ファイルの構造体

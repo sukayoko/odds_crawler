@@ -26,7 +26,13 @@ class SeleniumDriver:
         options = webdriver.ChromeOptions()
 
         # ブラウザを起動せずに実行するオプション
-        options.add_argument('--headless')
+        # options.add_argument('--headless')
+
+        # 以下のエラーが出るので指定
+        # Cloud management controller initialization aborted as CBCM is not enabled. 
+        # Please use the `--enable-chrome-browser-cloud-management` command line flag to enable it 
+        # if you are not using the official Google Chrome build.
+        options.add_argument('--enable-chrome-browser-cloud-management')
 
         options.binary_location = self.browser_path
         service = ChromeService(executable_path=self.driver_path)
@@ -158,3 +164,103 @@ class SeleniumDriver:
 
         # 見つからなかったら False        
         return False
+    
+    # 指定した要素は以下のaタグ一覧を出す
+    def print_element_by_a_text(self, root_elem) :
+        atag_elements = root_elem.find_elements(By.TAG_NAME, "a")
+        for a_elem in atag_elements :
+            print("'" + a_elem.text + "'")
+
+    # 情報ページで開催場名一覧を取得する
+    def get_ba_list_from_atag(self, root_elem) :
+        ba_list = []
+        atag_elements = root_elem.find_elements(By.TAG_NAME, "a")
+        for a_elem in atag_elements :
+            ba_list.append(a_elem.text)
+        
+        return ba_list
+    
+    # オッズページで開催場名一覧を取得する
+    def get_ba_list_from_oddspage(self, root_elem) :
+        ba_elem_list = []
+        atag_elements = root_elem.find_elements(By.TAG_NAME, "a")
+        for a_elem in atag_elements :
+            ba_elem_list.append(a_elem)
+        
+        return ba_elem_list
+    
+
+    # 特定の文字列を持つ aタグを捜しクリックする(JRA HP用)
+    def click_element_by_a_text(self, text) :
+        atag_elements = self.driver.find_elements(By.TAG_NAME, "a")
+        for a_elem in atag_elements :
+            # print("'" + a_elem.text + "'")
+            if (a_elem.text == text) :
+                a_elem.click()
+                return True
+        
+        return False
+    
+    # 特定の文字列を持つ aタグを捜しクリックする(JRA HP用)
+    def click_element_by_span_text(self, text) :
+        atag_elements = self.driver.find_elements(By.TAG_NAME, "span")
+        for a_elem in atag_elements :
+            # print("'" + a_elem.text + "'")
+            if (a_elem.text == text) :
+                a_elem.click()
+                return True
+        
+        return False
+    
+
+
+
+    # 特定のクラス名を持つ要素を取得(単一)
+    def get_element_by_class(self, root_elem, class_name, get_index = 0):
+        if(self.driver != None):
+            # class は単一でない可能性
+            class_elements = root_elem.find_elements(By.CLASS_NAME, class_name)
+            idx = 0
+            for cl_elem in class_elements :
+                if (idx == get_index):
+                    return cl_elem
+                else :
+                    idx = idx + 1
+            return None
+    
+    # 特定のクラス名を持つ要素を取得(複数)
+    def get_elements_by_class(self, root_elem ,class_name):
+        if(self.driver != None):
+            # class は単一でない可能性
+            class_elements = root_elem.find_elements(By.CLASS_NAME, class_name)
+            if (len(class_elements) > 0):
+                return class_elements
+            else :
+                return None
+            
+    def test_elem(self) :
+        e = self.driver.find_element(By.XPATH, "//*[@id=\"race_list\"]/tbody/tr[1]/td[3]/div/div[1]/a")
+        e.click()
+        print(e)
+
+    # JRAのオッズメニューからオッズ一覧を取得する
+    def get_odds_list_from_table(self, root_elem, class_name) :
+        odds_list = []
+        tdlist = root_elem.find_elements(By.CLASS_NAME, class_name)
+
+        if len(tdlist) > 0:
+            for td in tdlist:
+                odds_list.append(td.text)
+            return odds_list
+        else:
+            return None
+
+    # JRAのオッズメニューからレース番号一覧を取得する
+    def get_race_list_from_page(self) :
+        race_elem = self.get_element_by_class(self.driver, "race-num")
+        race_num_list = race_elem.find_elements(By.TAG_NAME, "a")
+
+        if len(race_num_list) > 0:
+            return race_num_list
+        else:
+            return None

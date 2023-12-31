@@ -6,6 +6,16 @@ from enum import Enum
 
 #### 定数
 CONFIG_KEY = "as"
+# プログラムの実行時間範囲と実行間隔
+START_HOUR = 0
+END_HOUR = 24
+
+INTERVAL_MINUTES = 1
+
+
+RACE_INFO_URL = (
+   "https://www.keiba.go.jp/KeibaWeb_IPAT/TodayRaceInfo/TodayRaceInfoTop_ipat"
+)
 
 ########################
 ### よく変更するであろう定数
