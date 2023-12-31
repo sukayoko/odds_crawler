@@ -10,7 +10,7 @@ debug.log
 clone後 パッケージをダウンロード
 $pip install selenium
 $pip install cryptography
-
+$pip install influxdb-client
 
 chrome *1 と
 chromeDriver *2

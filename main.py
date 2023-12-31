@@ -1,20 +1,23 @@
 import time, sys, os
+import datetime as dt
+import locale
 import argparse
 from const import *
 from local_config import LocalConfig
 from ipat_selenium_driver import IpatSeleniumDriver
 from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
+import re
+
 
 def main() :
     # 一定時間ごとに crawl ?
-
-
     main_loop()
 
 
 
 def jra_odds_crawl() :
+    ### 現時点では当日の A, B, C 場のオッズのみを取得する
     chromeDriver = IpatSeleniumDriver(resource_path("temp"))
     chromeDriver.driver.get("https://www.jra.go.jp/keiba/")
 
@@ -31,15 +34,30 @@ def jra_odds_crawl() :
         # 開催日毎、場毎にページがある
         for p_elem in panel_elems :
             title_elem = chromeDriver.get_element_by_class(p_elem, "sub_header")
-            # print(title_elem.text)
-            chromeDriver.print_element_by_a_text(p_elem)
+            print(title_elem.text)
 
-            for ba_elem in chromeDriver.get_ba_list_from_atag(p_elem) :
-                crawl_ba_list.append(ba_elem)
+            # 当日でない場合はスキップする          
+            match_date = re.match(r"(\d+)月(\d+)日", title_elem.text)
+            if match_date:
+                month = int(match_date.group(1))
+                day = int(match_date.group(2))
 
-        # ここで一回画面遷移しないとエラーになってしまう。。
-        chromeDriver.click_element_by_a_text(crawl_ba_list[0])
-        # print(crawl_ba_list)
+                current_date = datetime.now()
+                # TODO
+                # if month == current_date.month and day == current_date.day :
+                if month == 12 and day == 24 :
+                    for ba_elem in chromeDriver.get_ba_list_from_atag(p_elem) :
+                        crawl_ba_list.append(ba_elem)
+            
+            else:
+                # TODO 例外
+                print("正規表現が一致しませんでした。")
+                sys.exit()
+            
+        if len(crawl_ba_list) > 0 :
+            # ここで一回画面遷移しないとエラーになってしまう。。
+            chromeDriver.click_element_by_a_text(crawl_ba_list[0])
+            print(crawl_ba_list)
 
         for ba_i in range(len(crawl_ba_list)):
             # 順番にオッズページを確認
@@ -54,7 +72,13 @@ def jra_odds_crawl() :
 
             # 次のレース
             race_num_list = chromeDriver.get_race_list_from_page()
+            print("場:" + str(ba_i))
             for i in range(len(race_num_list)):
+                print("R:" + str(i+1))
+                # 毎回取得しなおす
+                race_num_list = chromeDriver.get_race_list_from_page()
+                # race_num_list[i].click()
+                chromeDriver.driver.execute_script("arguments[0].click()", race_num_list[i])
                 ### 先頭にヘッダも入る "単勝"
                 ### TODO 取り消しの場合　"取消"　が入るはず　
                 # 1レース目だけ行けたらOK 次のページでオッズ、場の一覧が見れるので
@@ -64,6 +88,8 @@ def jra_odds_crawl() :
 
                  # テーブルから取得
                 result = chromeDriver.get_odds_list_from_table(chromeDriver.driver, "odds_tan")
+                # 先頭の要素を取り除く
+                result = result[1:]
 
                 # 数字の文字列ではないものは 0.0 に変換
                 for k in range(len(result)):
@@ -72,13 +98,29 @@ def jra_odds_crawl() :
                     except ValueError:
                         result[k] = "0.0"
                 print(",".join(result))
+                
+                race_place_id = "N"
+                if ba_i == 0 :
+                    race_place_id = "A"
+                    pass
+                elif ba_i == 1 :
+                    race_place_id = "B"
+                    pass
+                elif ba_i == 2 :
+                    race_place_id = "C"
+                    pass
+                else :
+                    pass
+
+                # register_odds(race_place_id, race_number, betting_type, combine, odds)
+                    # race_number i+1
+                    # BETTING_TYPE_TANSYO
 
                 ### ワイドへ移動
                 # chromeDriver.click_element_by_a_text("ワイド")
 
-                # 毎回取得しなおす
-                race_num_list = chromeDriver.get_race_list_from_page()
-                race_num_list[i].click()
+
+
             
             # CHECK TODO もしオッズがまだない状態だとどうなる？？
 
@@ -88,23 +130,25 @@ def jra_odds_crawl() :
 def main_loop() :
 
     init_flag = True
-
+    
     # 起動メッセージ
-    print("起動メッセージ")
-    print(f"実行時間は毎日 {START_HOUR}:00～{END_HOUR}:00 の間です。")
+    print("起動しました")
+    print(f"実行時間は土曜日、日曜日 {START_HOUR}:00～{END_HOUR}:00 の間です。")
 
+    locale.setlocale(locale.LC_TIME, "ja_JP.UTF-8")
     bef_exec_now = time.time() - (INTERVAL_MINUTES * 60 * 1000)
     # 指定した時間以外は休止
     ###  定期的に実行
     while True:
         
         now = datetime.now()
+        day_of_week = now.weekday()
         current_hour = now.hour
         current_minute = now.minute
-
         cur_exec_now = time.time()
         
-        if START_HOUR <= current_hour <= END_HOUR:
+        # 曜日が 5, 6(土日)であれば
+        if  day_of_week >= 5 and (START_HOUR <= current_hour <= END_HOUR):
             # 当日初回実行の場合は tempディレクトリは以下を削除する。
             if init_flag:
                 # initialize()
@@ -124,6 +168,7 @@ def main_loop() :
         else:
             init_flag = True
             time.sleep(INTERVAL_MINUTES * 60)
+
 
 
         # break

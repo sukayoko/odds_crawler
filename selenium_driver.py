@@ -20,13 +20,14 @@ class SeleniumDriver:
     # コンストラクタ
     def __init__(self):
         # ブラウザ指定 TODO: ブラウザの条件分岐
+        # CHECK パスとファイル名は osによって変わるので注意
         self.browser_path = self.resource_path('browser/chrome/chrome.exe')
         self.driver_path = self.resource_path('driver/chrome/chromedriver.exe')
 
         options = webdriver.ChromeOptions()
 
         # ブラウザを起動せずに実行するオプション
-        # options.add_argument('--headless')
+        options.add_argument('--headless')
 
         # 以下のエラーが出るので指定
         # Cloud management controller initialization aborted as CBCM is not enabled. 
