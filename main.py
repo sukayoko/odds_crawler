@@ -7,6 +7,7 @@ from ipat_selenium_driver import IpatSeleniumDriver
 from influxdb_client import InfluxDBClient, Point
 from influxdb_local_client import InfluxDBLocalClient
 from datetime import datetime, timezone, timedelta
+from netkeiba_crawler import NetkeibaCrawler
 from selenium.webdriver.common.by import By
 from typing import List
 import re
@@ -711,6 +712,11 @@ if __name__ == "__main__":
     elif args.mode == "nar-odds":
         nar_odds_crawl_main(args.mode)
     elif args.mode == "jra-result":
+
+        # とりあえず一回分
+        netkeiba_crawler = NetkeibaCrawler("東京")
+        netkeiba_crawler.save_race_info_to_influxdb()
+
         pass
     elif args.mode == "nar-result":
 

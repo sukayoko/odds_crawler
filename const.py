@@ -6,7 +6,7 @@ from enum import Enum
 
 #### 定数
 # 0 は gui表示する
-HEADLESS = 1
+HEADLESS = 0
 
 CONFIG_KEY = "as"
 # プログラムの実行時間範囲と実行間隔
