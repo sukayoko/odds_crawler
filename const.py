@@ -5,10 +5,16 @@ Constant types in Python.
 from enum import Enum
 
 #### 定数
+# 0 は gui表示する
+HEADLESS = 1
+
 CONFIG_KEY = "as"
 # プログラムの実行時間範囲と実行間隔
 START_HOUR = 9
-END_HOUR = 24
+END_HOUR = 16
+
+NAR_START_HOUR = 9
+NAR_END_HOUR = 18
 
 INTERVAL_MINUTES = 1
 
@@ -17,6 +23,13 @@ BETTING_TYPE_TANSYO = "単勝"
 RACE_INFO_URL = (
    "https://www.keiba.go.jp/KeibaWeb_IPAT/TodayRaceInfo/TodayRaceInfoTop_ipat"
 )
+
+### InfulxDB
+RACE_NO = "race_number"
+TAG_COMBINE = "combine"
+TAG_BETTING_TYPE = "betting_type"
+JOKEY_NAME = "jokey_name"
+
 
 ########################
 ### よく変更するであろう定数

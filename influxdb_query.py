@@ -1,5 +1,5 @@
-import influxdb_client, os, time
-from influxdb_client import InfluxDBClient, Point, WritePrecision
+import influxdb_local_client, os, time
+from influxdb_local_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # token = os.environ.get("INFLUXDB_TOKEN")
@@ -7,7 +7,7 @@ token = "BpuYs_ip6nKxvL2fcIBYqp8hxaz4x_94TgmKNeEjHwfq1SoIGPj87_IxyY47JjL8s558PyV
 org = "organization"
 url = "http://192.168.1.118:8086"
 
-client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
+client = influxdb_local_client.InfluxDBClient(url=url, token=token, org=org)
 
 bucket="bkt1"
 
