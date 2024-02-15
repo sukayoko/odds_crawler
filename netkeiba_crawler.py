@@ -18,6 +18,30 @@ class NetkeibaCrawler(SeleniumDriver) :
         self.ba = baStr
         super().__init__()
 
+        self.driver.execute_cdp_cmd('Network.enable', {})
+        self.driver.execute_cdp_cmd('Network.setBlockedURLs', {
+            'urls': [
+            'images.taboola.com',
+            'sg-trc-events.taboola.com',
+            'bidder.criteo.com',
+            'pippio.com',
+            'tg.socdm.com',
+            'hbopenbid.pubmatic.com',
+            'usermatch.krxd.net',
+            'aax.amazon-adsystem.com',
+            'ib.adnxs.com',
+            'secure.adnxs.com',
+            'fastlane.rubiconproject.net'
+            'securepubads.g.doubleclick.net'
+            'aladdin.genieesspv.com',
+            'shb.richaudience.com',
+
+
+            # '*.png',
+            # '*.jpg',
+            # '*.gif',
+        ]})
+
     def __del__(self):
         return super().__del__()
 
@@ -37,7 +61,7 @@ class NetkeibaCrawler(SeleniumDriver) :
             # 回、日、レースでループ
             # 存在しない場合？
             for kaisai_num in range(1, 6):
-                print("kaisai_num" + kaisai_num)
+                print("kaisai_num" + str(kaisai_num))
                 # n回1日1R が存在しないなら終了
                 chk_url = "https://race.netkeiba.com/race/result.html?race_id=2023" + ba_str + str(kaisai_num).zfill(2) + "0101" + "&mode=result"
                 if ( not self.chk_race_result_exist(chk_url) ):
@@ -45,43 +69,28 @@ class NetkeibaCrawler(SeleniumDriver) :
 
                 for day_num in range(1, 15):
                     # n日1R が存在しないなら次
-                    print("day_num" + day_num)
+                    print("day_num" + str(day_num))
                     chk_url = "https://race.netkeiba.com/race/result.html?race_id=2023" + ba_str + str(kaisai_num).zfill(2) + str(day_num).zfill(2) + "01" + "&mode=result"
                     if ( not self.chk_race_result_exist(chk_url) ):
                         continue
 
-                    # TODO: ここでレースの一覧を取得すべき？  
-
                     for race_num in range(1, 13):
-                        print("race_num" + race_num) 
+                        print("race_num" + str(race_num)) 
                         # nRが存在しないなら次
                         chk_url = "https://race.netkeiba.com/race/result.html?race_id=2023" + ba_str + str(kaisai_num).zfill(2) + str(day_num).zfill(2) + str(race_num).zfill(2) + "&mode=result"
                         if ( not self.chk_race_result_exist(chk_url) ):
                              continue
 
-                        # 開催の情報ページへ遷移
-                        
+                        # nレースの開催の情報ページへ遷移
+                        self.driver.get(chk_url)
 
-                        # https://race.netkeiba.com/race/result.html?race_id=202305010101&mode=result
-                        # 2023年 05 が東京 01 が 1回 01 が 1日 01 が 1R
+                        # 馬一覧を取る
 
-                        # 回
+                        # 馬毎に情報
 
-                        # 
+                        # 馬の父
+                        # 馬の母父
 
-                        # パスが異なる場合 次へ
-                        result_table_elem = self.get_element_by_class(self.driver, "ResultTableWrap")
-                        if result_table_elem != None :
-                            pass
-                        else : 
-                            pass
-                            # 存在する場合
-                            # RaceKaisaiWrap の Colクラスの li 要素一覧
-                            # aタグの title が 東京
-
-
-
-                            # レース結果詳細
 
         except NoSuchElementException:
             pass
