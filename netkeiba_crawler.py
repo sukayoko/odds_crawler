@@ -38,48 +38,41 @@ class NetkeibaCrawler(SeleniumDriver) :
         
         # 存在しない場合もある
         try: 
-            # 回、日、レースでループ　
+            # 回、日、レースでループ
             # 存在しない場合？
-            for range(10) :
-                # 1回1R が存在しないなら終了
-                for range(19):
-                    # n回1R が存在しないなら次
-                    for range(13):
-                        # nRが存在しないなら次                
-                        date_string = current_date.strftime('%Y%m%d')
-                        print(date_string)
+            for kaisai_num in range(1, 6):
+                # n回1日1R が存在しないなら終了
+                padded_str = str(kaisai_num).zfill(2)
 
-
+                for day_num in range(1, 15):
+                    # n日1R が存在しないなら次
+                    for race_num in range(1, 13):
+                        # nRが存在しないなら次
                         current_date += timedelta(days=1)
 
                         # 開催の情報ページへ遷移
-                        self.driver.get(kaisaiUrlAlias + date_string)
+                        self.driver.get(kaisaiUrlAlias)
 
                         # https://race.netkeiba.com/race/result.html?race_id=202305010101&mode=result
-                        # 2023年　05 が東京 01 が 1回 01 が 1日 01 が 1R
+                        # 2023年 05 が東京 01 が 1回 01 が 1日 01 が 1R
 
                         # 回
 
                         # 
 
-                        # パスが異なる場合　次へ
+                        # パスが異なる場合 次へ
                         result_table_elem = self.get_element_by_class(self.driver, "ResultTableWrap")
                         if result_table_elem != None :
                             pass
                         else : 
+                            pass
                             # 存在する場合
                             # RaceKaisaiWrap の Colクラスの li 要素一覧
-                            # aタグの title が　東京
+                            # aタグの title が 東京
 
 
 
                             # レース結果詳細
 
-
-
-
-                    pass
-
-            pass
         except NoSuchElementException:
             pass
