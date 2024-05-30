@@ -2,10 +2,21 @@
 # 引数によって　動作モードを切り替えたい
 # TODO ipat用にクラスを作った方がよい
 from selenium_driver import SeleniumDriver
+import time, sys, os
 from const import *
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+
+def resource_path(relative_path):
+    # TODO exe化する時と開発するときでパスが変わる
+    try:
+        base_path = sys._MEIPASS
+        # exe化用（ダブルクリックで実行したとき、実行ファイルの配置場所のパスとなる）
+        # base_path = os.getcwd()
+    except Exception:
+        base_path = os.path.dirname(__file__)
+    return os.path.join(base_path, relative_path)
 
 # Selenium クラス
 class IpatSeleniumDriver(SeleniumDriver) :
@@ -16,7 +27,7 @@ class IpatSeleniumDriver(SeleniumDriver) :
 
     # コンストラクタ
     def __init__(self, file_path):
-        self.dir_path = file_path
+        self.dir_path = resource_path(file_path)
         super().__init__()
 
     def __del__(self):

@@ -28,3 +28,12 @@ chrome配下に以下を配置
 driver\chrome配下に以下を配置
 ・chromedriver.exe *2
 ・LICENSE.chromedriver *2
+
+
+◆使い方
+modeによって変わります
+■ mode (-m)
+'jra-odds','nar-odds','jra-result','nar-result'
+■ dev-flag (-d)
+デフォルト false, trueの場合指定
+
