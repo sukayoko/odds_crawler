@@ -38,8 +38,8 @@ class NetkeibaCrawler(SeleniumDriver) :
 
 
             # '*.png',
-            # '*.jpg',
-            # '*.gif',
+            '*.jpg',
+            '*.gif',
         ]})
 
     def __del__(self):
@@ -52,37 +52,37 @@ class NetkeibaCrawler(SeleniumDriver) :
 
         # 東京の場合
         ba_str = "05"
+        skip_flg = False
         
-        # 06 は中山 01 は 1回 02 は二日目
-        # https://race.netkeiba.com/top/payback_list.html?kaisai_id=2023060102&kaisai_date=20230107
+        # 05 は東京 01 は 1回 02 は二日目 03 は第三レース
+        # https://race.netkeiba.com/race/result.html?race_id=202305010203&mode=result
         
         # 存在しない場合もある
         try: 
             # 回、日、レースでループ
-            # 存在しない場合？
+            # 開催日　は　最大5 ?
             for kaisai_num in range(1, 6):
-                print("kaisai_num" + str(kaisai_num))
-                # n回1日1R が存在しないなら終了
-                chk_url = "https://race.netkeiba.com/race/result.html?race_id=2023" + ba_str + str(kaisai_num).zfill(2) + "0101" + "&mode=result"
-                if ( not self.chk_race_result_exist(chk_url) ):
-                    continue
+                if(skip_flg) :
+                    skip_flg = False
 
-                for day_num in range(1, 15):
-                    # n日1R が存在しないなら次
-                    print("day_num" + str(day_num))
-                    chk_url = "https://race.netkeiba.com/race/result.html?race_id=2023" + ba_str + str(kaisai_num).zfill(2) + str(day_num).zfill(2) + "01" + "&mode=result"
-                    if ( not self.chk_race_result_exist(chk_url) ):
-                        continue
+                # 開催日数は最大12日
+                for day_num in range(1, 13):
+                    if(skip_flg):
+                        break
 
-                    for race_num in range(1, 13):
-                        print("race_num" + str(race_num)) 
-                        # nRが存在しないなら次
+                    # 開催レースは最大12
+                    # for race_num in range(1, 13):
+                    for race_num in range(1, 2):
+                        print("第" + str(kaisai_num) + "回" +  str(day_num) + "日" +  str(race_num) + "R") 
+                        # n回n日nRが存在しないなら次
                         chk_url = "https://race.netkeiba.com/race/result.html?race_id=2023" + ba_str + str(kaisai_num).zfill(2) + str(day_num).zfill(2) + str(race_num).zfill(2) + "&mode=result"
-                        if ( not self.chk_race_result_exist(chk_url) ):
-                             continue
-
                         # nレースの開催の情報ページへ遷移
                         self.driver.get(chk_url)
+                        result_table_elem = self.get_element_by_class(self.driver, "ResultTableWrap")
+                        if result_table_elem != None :
+                            print("このレース情報は存在しません")
+                            skip_flg = True
+                            break
 
                         # 馬一覧を取る
 
