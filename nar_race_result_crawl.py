@@ -6,6 +6,8 @@ import re
 import time, sys
 from datetime import datetime, timezone, timedelta
 import datetime as dt
+from race_result_obj import NarRaceResultObj
+from psql import PostgresClient
 from util import time_to_milliseconds
 
 # 地方競馬のレース結果登録用クラス
@@ -25,51 +27,14 @@ class NarRaceResultCrawler :
 
     def nar_race_result_crawl_main(self):
 
-        # 構造体
-        class raceResult:
-            date: str #開催日
-            ba : str # 場
-            race_num: int #レース番号
-            distance: int # 距離
-            weather: str # 天候
-            ground_condition: str # 馬場状態
-            rule : str # 条件
-
-            horse_name: str # 馬名
-            position: int   #着順
-            umaban: int     #馬番
-            age : int # 年齢
-            sex : str # 性別
-            birthday: str # 誕生日(年は除く)
-            f_name: str #父親の名前
-            ff_name: str # 父父の名前
-            mf_name: str # 母父の名前
-            farm: str # 生産牧場
-            affiliation: str # 所属
-            jokey_name : str # ジョッキー
-            trainer_name : str # 調教師
-            owner_name : str # 馬主
-            additional_weight : float # 負担重量
-            weight : float # バ体重
-            record : int # 走破時間 (ミリ秒に変換)
-            last_three_furlong : float # 上がり3ハロン
-            popularity : int # 人気度
-            corner_position_rate : int # それぞれのコーナでの位置の合計　低いほど前目にいたということ
-            rounded_weight : float # 丸め体重
-
-
-            def __str__(self):
-                return f"{self.date},{self.ba},{self.race_num},{self.distance}, {self.weather}, {self.ground_condition},{self.rule},{self.horse_name},\
-                    {self.position},{self.umaban},{self.age},{self.sex},{self.birthday},{self.f_name},{self.ff_name},{self.mf_name},{self.farm},\
-                    {self.affiliation},{self.jokey_name},{self.trainer_name},{self.owner_name},{self.additional_weight},{self.weight}, {self.record},\
-                    {self.last_three_furlong},{self.popularity}, {self.corner_position_rate},{self.rounded_weight}"
-
         # babaCode :
         # 浦和 18
         # 大井 20
         # current_url = "https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/RaceList?k_raceDate=2024%2f05%2f16&k_babaCode=18"
         current_url = "https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/RaceList?k_raceDate=2024%2f05%2f16&k_babaCode=20"
         self.chromeDriver.driver.get(current_url)
+
+        finish_flag = False
         
         # 翌日がなくなるまでループ
         while True:
@@ -77,9 +42,9 @@ class NarRaceResultCrawler :
             self.chromeDriver.driver.get(current_url)
             tomorrow_elem = self.chromeDriver.get_element_by_class(self.chromeDriver.driver, "tomorrow")
             if(tomorrow_elem == None):
-                break
-
-            next_url = tomorrow_elem.get_attribute("href")
+                finish_flag = True
+            else :
+                next_url = tomorrow_elem.get_attribute("href")
         
             # 成績リストを取得して番号
             # a_tag_list = chromeDriver.get_elements_by_tag_and_text(chromeDriver.driver, "a", "成績")
@@ -88,9 +53,7 @@ class NarRaceResultCrawler :
 
             # 途中から開始した場合はエラーになりそう
             for race_no in range(len(a_tag_list)):  
-                raceResult_list_by_race: List[raceResult] = []
-                # influx登録用 Pointリスト
-                # point_list : Point = []
+                raceResult_list_by_race: List[NarRaceResultObj] = []
 
                 result_url = cur_url.replace("RaceList", "RaceMarkTable")
                 result_url = result_url + "&k_raceNo=" + str(race_no+1)
@@ -182,13 +145,13 @@ class NarRaceResultCrawler :
 
                         if len(col_list) > 14:
                             # 着順がない行はスキップ(取り消しのはず)
-                            uma_result_data = raceResult()
+                            uma_result_data = NarRaceResultObj()
                             try:
                                 int(col_list[0].text)
                             except ValueError:
                                 continue
 
-                            uma_result_data.date = date
+                            uma_result_data.date = datetime( int(date_match.group(1)), int(date_match.group(2)), int(date_match.group(3)), int(race_no+1), 0, 0)
                             # timescale用に日付のフォーマットが必要？
                             uma_result_data.ba = self.baName
                             uma_result_data.race_num = race_no+1
@@ -289,8 +252,31 @@ class NarRaceResultCrawler :
                         a_tag_uma_list = self.chromeDriver.get_elements_by_tag(col_list[3], "a")
                         a_elem = a_tag_uma_list[0]
                         uma_url = a_elem.get_attribute("href")
-                        uma_url = uma_url.replace("HorseMarkInfo","RaceHorseInfo") + "&k_activeCode=1"
+                        # 出走履歴画面へ遷移
+                        self.chromeDriver.driver.get(uma_url)
+                        horse_mark_info_table_elem = self.chromeDriver.get_element_by_class(self.chromeDriver.driver, "HorseMarkInfo_table", 0)
+                        if (horse_mark_info_table_elem != None):
+                            horse_mark_info_list = self.chromeDriver.get_elements_by_tag(horse_mark_info_table_elem, "tr")
+                            # 出走履歴が一つもない場合は 999週間隔とする(デフォルト値)
+                            if len(horse_mark_info_list) < 3:
+                                pass
+                            else:
+                                # trの1行目、2行目はヘッダなので飛ばす
+                                for horse_mark_info_tr in horse_mark_info_list[2:]:
+                                    col_list = horse_mark_info_tr.find_elements(By.TAG_NAME, "td")
+                                    #出走年月日
+                                    pre_race_date_pattern = re.compile(r'(\d{4})/(\d{1,2})/(\d{1,2})')
+                                    
+                                    pre_race_date_match = pre_race_date_pattern.search(col_list[0].text)
+                                    pre_race_datetime = datetime( int(pre_race_date_match.group(1)), int(pre_race_date_match.group(2)), int(pre_race_date_match.group(3)), int(race_no+1), 0, 0)
+                                    diff_day = raceResult_list_by_race[u_index-2].date - pre_race_datetime
 
+                                    raceResult_list_by_race[u_index-2].pre_race_interval_week = int(diff_day.days / 7)
+
+                                    break
+
+                        # 出走履歴画面のURLを馬情報画面のURLへ変更
+                        uma_url = uma_url.replace("HorseMarkInfo","RaceHorseInfo") + "&k_activeCode=1"
                         self.chromeDriver.driver.get(uma_url)
 
                         # 生年月日、馬主、牧場を取得
@@ -308,7 +294,10 @@ class NarRaceResultCrawler :
                                 if p_index == 1:
                                     # 1行目
                                     # 2019.03.14生 なので変換が必要
-                                    raceResult_list_by_race[u_index-2].birthday = col_list[1].text
+                                    bd_str = col_list[1].text[:-1]
+                                    date_obj = datetime.strptime(bd_str, '%Y.%m.%d').date()
+                                    # 年は一律1900年に変更
+                                    raceResult_list_by_race[u_index-2].birthday = date_obj.replace(year=1900)
                                 elif p_index == 2:
                                     # 2行目の3
                                     raceResult_list_by_race[u_index-2].owner_name = col_list[3].text
@@ -341,42 +330,18 @@ class NarRaceResultCrawler :
                         u_index = u_index + 1
                     ##### while loop
 
-                    for race_row in raceResult_list_by_race:
-                        print(race_row)
-                    # 1レース分ずつ登録していく
-                    # 一つのレース、馬番順に単勝オッズをリストに追加
-                    local_time = datetime( int(date_match.group(1)), int(date_match.group(2)), int(date_match.group(3)), 0, 0, 0)
-                    utc_time = local_time.astimezone(timezone.utc)
+                    # for race_row in raceResult_list_by_race:
+                    #     print(race_row)
 
-                    for uma_result  in raceResult_list_by_race :
-                        # point_list.append( 
-                        #     Point("浦和")
-                        #     .tag("distance", uma_result.distance)
-                        #     .tag("weather", uma_result.weather)
-                        #     .tag("ground_condition", uma_result.ground_condition)
-                        #     .tag("umaban", uma_result.umaban)
-                        #     .tag("horse_name", uma_result.horse_name)
-                        #     .tag("affiliation", uma_result.affiliation)
-                        #     .tag("age", uma_result.age)
-                        #     .tag("sex", uma_result.sex)
-                        #     .tag("additional_weight", uma_result.additional_weight)
-                        #     .tag("jokey_name", uma_result.jokey_name)
-                        #     .tag("trainer_name", uma_result.trainer_name)
-                        #     .tag("weight", uma_result.weight)
-                        #     .tag("popularity", uma_result.popularity)
-                        #     .tag("corner_position_rate", uma_result.corner_position_rate)       # 二桁で 0埋め！
-                        #     .tag("f_name", uma_result.f_name)
-                        #     .tag("mf_name", uma_result.mf_name)
-                        #     .tag("position", uma_result.position)
-                        #     .field("record", uma_result.record)
-                        #     .field("position", uma_result.position)
-                        #     .field("corner_position_rate", uma_result.corner_position_rate)  # 二桁で 0埋め！
-                        #     .time(utc_time)
-                        # )
-                    
-                    # if (len(point_list) > 0) :
-                    #     pass
-                    #   influxClient.register_point_list(point_list)
-                        pass
-        
+                    # 1レース分ずつ登録していく
+                    # 一つのレース、馬番順に単勝オッズをリストに追加 #TODO
+                    local_time = datetime( int(date_match.group(1)), int(date_match.group(2)), int(date_match.group(3)), 0, 0, 0)
+
+                    psql_client = PostgresClient()
+                    psql_client.register_nar_race_result(raceResult_list_by_race)
+
+            # 翌日のデータがないなら終了        
+            if(finish_flag) :
+                break
+
             current_url = next_url

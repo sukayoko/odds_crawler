@@ -36,6 +36,3 @@ modeによって変わります
 'jra-odds','nar-odds','jra-result','nar-result'
 ■ dev-flag (-d)
 デフォルト false, trueの場合指定
-
-test
-
