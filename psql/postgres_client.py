@@ -92,3 +92,47 @@ class PostgresClient:
 
 
     # 馬情報の登録
+
+    def select_nar_race_result(self, nar_race_result_list : List[NarRaceResultObj]) :
+        # PostgreSQLデータベースへの接続
+        conn = psycopg2.connect(
+            dbname="chessdb",
+            user="root",
+            password="secret",
+            host="192.168.56.18",
+            port="5432"
+        )
+        # カーソルオブジェクトを作成
+        cur = conn.cursor()
+        # 検索クエリ
+        select_query = """
+        SELECT 
+            trainer_name, 
+            AVG(position) AS avg_position,
+            SUM(CASE WHEN position = 1 THEN 1 ELSE 0 END) AS first_place_count,
+            SUM(CASE WHEN position = 2 THEN 1 ELSE 0 END) AS second_place_count,
+            SUM(CASE WHEN position = 3 THEN 1 ELSE 0 END) AS third_place_count,                        
+            AVG(corner_position_rate) AS avg_corner_position_rate, 
+            COUNT(trainer_name) AS trainer_count
+        FROM 
+            nar_race_results
+        WHERE 
+            ba = '大井' AND 
+            rule = '一般' AND 
+            distance = 1600 AND
+            trainer_name = '的場直'
+        GROUP BY 
+            trainer_name
+        ORDER BY avg_position ASC;
+        """
+
+#  trainer_name |    avg_position    | first_place_count | second_place_count | third_place_count | avg_corner_position_rate | trainer_count
+# --------------+--------------------+-------------------+--------------------+-------------------+--------------------------+---------------
+#  的場直       | 6.2000000000000000 |                 0 |                  3 |                 1 |      33.3000000000000000 |            10
+        # データを挿入
+        cur.execute(select_query)
+        # カーソルと接続を閉じる
+        cur.close()
+        conn.close()
+
+        print("")

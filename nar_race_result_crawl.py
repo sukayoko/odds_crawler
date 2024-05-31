@@ -31,7 +31,7 @@ class NarRaceResultCrawler :
         # 浦和 18
         # 大井 20
         # current_url = "https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/RaceList?k_raceDate=2024%2f05%2f16&k_babaCode=18"
-        current_url = "https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/RaceList?k_raceDate=2024%2f05%2f16&k_babaCode=20"
+        current_url = "https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/RaceList?k_raceDate=2023%2f09%2f08&k_babaCode=20"
         self.chromeDriver.driver.get(current_url)
 
         finish_flag = False
@@ -50,6 +50,14 @@ class NarRaceResultCrawler :
             # a_tag_list = chromeDriver.get_elements_by_tag_and_text(chromeDriver.driver, "a", "成績")
             a_tag_list = self.chromeDriver.get_elements_by_tag_and_text_except_class(self.chromeDriver.driver, "a", "成績", "disable")
             cur_url = self.chromeDriver.driver.current_url
+
+            # TODO a_tag_listが空の場合 ※台風の影響により、取り止めになりました
+            if (a_tag_list == None):
+                # 翌日のデータがないなら終了        
+                if(finish_flag) :
+                    break
+                current_url = next_url
+                continue
 
             # 途中から開始した場合はエラーになりそう
             for race_no in range(len(a_tag_list)):  
@@ -74,6 +82,10 @@ class NarRaceResultCrawler :
                 if table_bs_list != None and len(table_bs_list) < 4 : 
                     print("error")
                     sys.exit()
+                # レース情報はあるが、一部のレースがない場合もある。その場合そのレースをスキップ
+                if (table_bs_list == None):
+                    # print("bs continue")
+                    continue
 
                 # レース情報
                 race_info_elem = self.chromeDriver.get_element_by_tag_and_contain_text(table_bs_list[1], "td", "")
@@ -149,6 +161,7 @@ class NarRaceResultCrawler :
                             try:
                                 int(col_list[0].text)
                             except ValueError:
+                                # print("uma result continue")
                                 continue
 
                             uma_result_data.date = datetime( int(date_match.group(1)), int(date_match.group(2)), int(date_match.group(3)), int(race_no+1), 0, 0)
@@ -243,6 +256,7 @@ class NarRaceResultCrawler :
                             int(col_list[0].text)
                         except ValueError:
                             u_index = u_index + 1
+                            # print("new trcontinue")
                             continue
 
                         # 馬のリンクを取得
@@ -297,7 +311,7 @@ class NarRaceResultCrawler :
                                     bd_str = col_list[1].text[:-1]
                                     date_obj = datetime.strptime(bd_str, '%Y.%m.%d').date()
                                     # 年は一律1900年に変更
-                                    raceResult_list_by_race[u_index-2].birthday = date_obj.replace(year=1900)
+                                    raceResult_list_by_race[u_index-2].birthday = date_obj.replace(year=2000)
                                 elif p_index == 2:
                                     # 2行目の3
                                     raceResult_list_by_race[u_index-2].owner_name = col_list[3].text
@@ -335,7 +349,7 @@ class NarRaceResultCrawler :
 
                     # 1レース分ずつ登録していく
                     # 一つのレース、馬番順に単勝オッズをリストに追加 #TODO
-                    local_time = datetime( int(date_match.group(1)), int(date_match.group(2)), int(date_match.group(3)), 0, 0, 0)
+                    
 
                     psql_client = PostgresClient()
                     psql_client.register_nar_race_result(raceResult_list_by_race)
