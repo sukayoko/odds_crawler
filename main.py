@@ -2,7 +2,8 @@ import locale,argparse,time
 from const import *
 from ipat_selenium_driver import IpatSeleniumDriver
 from netkeiba_crawler import NetkeibaCrawler
-from nar_race_result_crawl import NarRaceResultCrawler 
+from nar_race_result_crawl import NarRaceResultCrawler
+from nar_race_card_generator import NarRaceCardGenerator 
                     
 # main
 if __name__ == "__main__":
@@ -10,8 +11,9 @@ if __name__ == "__main__":
     locale.setlocale(locale.LC_TIME, "ja_JP.UTF-8")
     # オプションの設定
     parser = argparse.ArgumentParser(description='oddsの取得')
-    parser.add_argument('-m', '--mode', choices=['jra-odds','nar-odds','jra-result','nar-result'])
+    parser.add_argument('-m', '--mode', choices=['jra-odds','nar-odds','jra-result','nar-result','jar-card', 'nar-card'])
     parser.add_argument('-d', '--dev', default=False, choices=[True,False])
+    # TODO 対象日付
     args = parser.parse_args()
 
     if args.mode == "jra-odds":
@@ -35,6 +37,17 @@ if __name__ == "__main__":
         narRaceResultCrawler.nar_race_result_crawl_main()
 
         pass
+    elif args.mode == "jra-card":
+        pass
+    elif args.mode == "nar-card":
+        print("地方競馬レース結果収集プログラムを起動しました")
+
+        # 場名を指定して呼び出す
+        narRaceCardGenerator =  NarRaceCardGenerator("temp", args.dev)
+        narRaceCardGenerator.nar_race_card_generate_main("2024-05-14","大井")
+
+        pass
+
 
 # ジョッキー一覧を取得
 # def jra_jokey_crawl():
