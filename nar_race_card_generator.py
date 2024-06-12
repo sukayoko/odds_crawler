@@ -9,6 +9,8 @@ import datetime as dt
 from race_result_obj import NarRaceResultObj
 from psql import PostgresClient
 from util import *
+from csv_writer import *
+
 
 # 地方競馬の出馬表作成クラス
 class NarRaceCardGenerator :
@@ -37,11 +39,16 @@ class NarRaceCardGenerator :
 
         # レース数を取得
         # 開催がない場合は終了
-        a_tag_list = self.chromeDriver.get_elements_by_tag_and_text_except_class(self.chromeDriver.driver, "a", "成績", "disable")
+        # a_tag_list = self.chromeDriver.get_elements_by_tag_and_text_except_class(self.chromeDriver.driver, "a", "成績", "disable")
+        a_tag_list = self.chromeDriver.get_elements_by_tag_and_text(self.chromeDriver.driver, "a", "成績")
         if(a_tag_list == None):
             return
 
-        for race_no in range(len(a_tag_list)):  
+        for race_no in range(len(a_tag_list)):
+            # if(race_no == 2):
+            #     break
+            # 馬情報の一覧リスト
+            raceCard_horse_list: List[NarRaceResultObj] = []
 
             # TODO
             # race_card_list_by_race: List[NarRaceResultObj] = []
@@ -86,8 +93,8 @@ class NarRaceCardGenerator :
                 rule = rule_pettern_match.group(1)
 
             print(distance)
-            print(weather)
-            print(ground_condition)                
+            # print(weather)
+            # print(ground_condition)                
             print(rule)
 
             # 馬ごとの処理
@@ -95,26 +102,41 @@ class NarRaceCardGenerator :
             if (card_table_elem != None):
                     horse_tr_list = self.chromeDriver.get_elements_by_tag(card_table_elem, "tr")
                     # trの1行目、2行目はヘッダなので飛ばす
-                    h_index = 0
+                    h_index = 0                    
 
-                    print(len(horse_tr_list))
-                    for tr in horse_tr_list[2:]:                        
+                    # print(len(horse_tr_list))
+                    for tr in horse_tr_list[2:]:
+
                         # 一頭ごとに trが11つ
                         # とりあえず tdを取得する
                         col_list = tr.find_elements(By.TAG_NAME, "td")
 
                         # 各馬1行目
                         if  (h_index % 11 == 0):
+                            horseobj = NarRaceResultObj()
                             # 要素を作成                         
                             # for col in col_list:
                             #     print(col.text)
 
                             # # # 馬番
-                            print(col_list[1].text)
+                            # 同枠の二頭目は colの位置がずれる!
+                            pad = -1
+                            # print(col_list[1].text)
+                            if( str(col_list[1].text).isdigit()):
+                                pad = 0
+
+                            horseobj.umaban = int(col_list[1+pad].text)
                             # # # 馬名
-                            print(col_list[2].text)
+                            horseobj.horse_name = col_list[2+pad].text
                             # # # 騎手名 (所属)
-                            print(col_list[3].text)
+                            pattern = r"^(.*?)（.*?）$"
+                            match = re.match(pattern, col_list[3+pad].text)
+                            if match:
+                                horseobj.jokey_name = match.group(1)
+                            else :
+                                horseobj.jokey_name = ""
+
+
                             pass
                             
                         # 各馬2行目
@@ -122,55 +144,261 @@ class NarRaceCardGenerator :
                             # for col in col_list:
                             #     print(col.text)                            
                             # 性別　年齢
-                            print(col_list[0].text)
+                            match = re.match(r"([^\d]+)(\d+)", col_list[0].text)
+
+                            horseobj.sex = match.group(1)
+                            horseobj.age = int(match.group(2))
                             # # 誕生日 04.24生
-                            print(col_list[2].text)
+                            bd_str = col_list[2].text[:-1]
+                            date_obj = datetime.strptime(bd_str, '%m.%d').date()
+                            horseobj.birthday = date_obj.replace(year=2000)
                             # # 負担重量 56.0　0-0-1-0
-                            print(col_list[3].text)
+                            ## TODO 加工
+                            horseobj.additional_weight = col_list[3].text
                             pass
                         # 各馬3行目 
                         elif  (h_index % 11 == 8):                           
                             # for col in col_list:
                             #     print(col.text)
+                            
+                            horseobj.f_name = col_list[0].text
                             # 調教師 (所属)
-                            print(col_list[1].text)
+                            pattern = r"^(.*?)（.*?）$"
+                            match = re.match(pattern,col_list[1].text)
+                            if match:
+                                horseobj.trainer_name = match.group(1)
+                            else :
+                                horseobj.trainer_name = ""
                             pass
                         # 各馬4行目
                         elif  (h_index % 11 == 9):                           
                             # for col in col_list:
                             #     print(col.text)
                             # 馬主
-                            print(col_list[1].text)
+                            horseobj.owner_name = col_list[1].text
                             pass
                         # 各馬5行目
                         elif  (h_index % 11 == 10):                           
                             # for col in col_list:
                             #     print(col.text)
+                            # （母父）
                             # 生産牧場
-                            print(col_list[1].text)
+                            horseobj.mf_name = col_list[0].text.replace('（', '').replace('）', '')
+                            horseobj.farm = col_list[1].text
 
-                            
-
+                            raceCard_horse_list.append(horseobj)
                             pass
+
+                        
+                        h_index = h_index + 1
+
+                    # csvに出力する準備
+                    csv_writer = CsvWriter(str(race_no+1) + "R")
+                    for horse in raceCard_horse_list:
+                        csv_writer.write_row(horse.horse_name)
+   
+                    ground_condition = "重"
 
                     # 馬リストからもう一度ループ
                     # 馬毎の持ちタイム比較みたいなものができれば
+                    for horse in raceCard_horse_list:
+                        #### 平均順位、母数　平均コーナ位置、母数
 
-                    # 馬名から残りの情報と指数を持ってくる
-                    # 平均順位、母数　平均コーナ位置、母数
-                    # 父と母父と父父
+                        positionRate = RaceStatObj()
+                        cornerRate = RaceStatObj()
+                        furlongRate = RaceStatObj()
 
-                    # 騎手名から
+                        rateArrays = [positionRate,cornerRate,furlongRate]
 
-                    # 調教師から
+                        # 距離、条件、馬場状態と検索条件を引数にする
 
-                    # 馬主
+                        psql_client = PostgresClient()
 
-                    # 生産牧場
+                        for stat_i in range(12):
+                            # 性別: 0
+                            if stat_i == 0:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.sex_idx = 0.0
+                                    race_state_obj.sex_total = 0
+                                result = psql_client.get_sex_stats(ba_name, distance, ground_condition, rule, horse.sex)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.sex_idx = result[0][res_i]
+                                        race_state_obj.sex_total = result[0][res_i+1]
+                                        res_i = res_i+2
+                                
+
+                            # 年齢 : 1
+                            if stat_i == 1:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.age_idx = 0.0
+                                    race_state_obj.age_total = 0
+                                result = psql_client.get_age_stats(ba_name, distance, ground_condition, rule, horse.age)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.age_idx = result[0][res_i]
+                                        race_state_obj.age_total = result[0][res_i+1]
+                                        res_i = res_i+2
+
+                            # 生年月日 : 2
+                            # skip
+                            if stat_i == 2:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.birth_idx = 0.0
+                                    race_state_obj.birth_total = 0
+                            # 馬主 : 3
+                            if stat_i == 3:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.owner_idx = 0.0
+                                    race_state_obj.owner_total = 0
+                                result = psql_client.get_owner_name_stats(ba_name, distance, ground_condition, rule, horse.owner_name)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.owner_idx = result[0][res_i]
+                                        race_state_obj.owner_total = result[0][res_i+1]
+                                        res_i = res_i+2
+                            # 生産牧場 : 4
+                            if stat_i == 4:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.farm_idx = 0.0
+                                    race_state_obj.farm_total = 0
+                                result = psql_client.get_farm_stats(ba_name, distance, ground_condition, rule, horse.farm)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.farm_idx = result[0][res_i]
+                                        race_state_obj.farm_total = result[0][res_i+1]
+                                        res_i = res_i+2
+                            # 体重 : 5
+                            # skip
+                            if stat_i == 5:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.weight_idx = 0.0
+                                    race_state_obj.weight_total = 0
+                            # 騎手名 : 6
+                            if stat_i == 6:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.jokey_idx = 0.0
+                                    race_state_obj.jokey_total = 0                                
+                                result = psql_client.get_jockey_stats(ba_name, distance, ground_condition, rule, horse.jokey_name)
+                                print(horse.jokey_name)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.jokey_idx = result[0][res_i]
+                                        race_state_obj.jokey_total = result[0][res_i+1]
+                                        res_i = res_i+2
+                                
+                            # 調教師 : 7
+                            if stat_i == 7:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.trainer_idx = 0.0
+                                    race_state_obj.trainer_total = 0
+                                result = psql_client.get_trainer_name_stats(ba_name, distance, ground_condition, rule, horse.trainer_name)
+                                print(horse.trainer_name)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.trainer_idx = result[0][res_i]
+                                        race_state_obj.trainer_total = result[0][res_i+1]
+                                        res_i = res_i+2                                
+                            # 父 : 8
+                            if stat_i == 8:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.f_idx = 0.0
+                                    race_state_obj.f_total = 0
+                                result = psql_client.get_f_name_stats(ba_name, distance, ground_condition, rule, horse.f_name)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.f_idx = result[0][res_i]
+                                        race_state_obj.f_total = result[0][res_i+1]
+                                        res_i = res_i+2  
+                            # 父父 : 9
+                            # skip
+                            if stat_i == 9:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.ff_idx = 0.0
+                                    race_state_obj.ff_total = 0
+                            # 母父 : 10
+                            if stat_i == 10:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.mf_idx = 0.0
+                                    race_state_obj.mf_total = 0
+                                result = psql_client.get_mf_name_stats(ba_name, distance, ground_condition, rule, horse.mf_name)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.mf_idx = result[0][res_i]
+                                        race_state_obj.mf_total = result[0][res_i+1]
+                                        res_i = res_i+2 
+                            # 前走間隔 : 11
+                            if stat_i == 11:
+                                for race_state_obj in rateArrays :
+                                    race_state_obj.pre_race_idx = 0.0
+                                    race_state_obj.pre_race_total = 0
+                                result = psql_client.get_pre_race_interval_week_stats(ba_name, distance, ground_condition, rule, horse.pre_race_interval_week)
+                                if(result):
+                                    res_i = 0
+                                    for race_state_obj in rateArrays :
+                                        race_state_obj.pre_race_idx = result[0][res_i]
+                                        race_state_obj.pre_race_total = result[0][res_i+1]
+                                        res_i = res_i+2 
+
+                        # 1行目組み立て
+                        # csvに出力
+                        csv_row = str(rateArrays[0].sex_idx) + "\t" + str(rateArrays[0].sex_total) + "\t" +\
+                            str(rateArrays[0].age_idx) + "\t" + str(rateArrays[0].age_total) + "\t" +\
+                            str(rateArrays[0].birth_idx) + "\t" + str(rateArrays[0].birth_total) + "\t" +\
+                            str(rateArrays[0].owner_idx) + "\t" + str(rateArrays[0].owner_total) + "\t" +\
+                            str(rateArrays[0].farm_idx) + "\t" + str(rateArrays[0].farm_total) + "\t" +\
+                            str(rateArrays[0].weight_idx) + "\t" + str(rateArrays[0].weight_total) + "\t\t" +\
+                            str(rateArrays[1].sex_idx) + "\t" + str(rateArrays[1].sex_total) + "\t" +\
+                            str(rateArrays[1].age_idx) + "\t" + str(rateArrays[1].age_total) + "\t" +\
+                            str(rateArrays[1].birth_idx) + "\t" + str(rateArrays[1].birth_total) + "\t" +\
+                            str(rateArrays[1].owner_idx) + "\t" + str(rateArrays[1].owner_total) + "\t" +\
+                            str(rateArrays[1].farm_idx) + "\t" + str(rateArrays[1].farm_total) + "\t" +\
+                            str(rateArrays[1].weight_idx) + "\t" + str(rateArrays[1].weight_total) + "\t\t" +\
+                            str(rateArrays[2].sex_idx) + "\t" + str(rateArrays[2].sex_total) + "\t" +\
+                            str(rateArrays[2].age_idx) + "\t" + str(rateArrays[2].age_total) + "\t" +\
+                            str(rateArrays[2].birth_idx) + "\t" + str(rateArrays[2].birth_total) + "\t" +\
+                            str(rateArrays[2].owner_idx) + "\t" + str(rateArrays[2].owner_total) + "\t" +\
+                            str(rateArrays[2].farm_idx) + "\t" + str(rateArrays[2].farm_total) + "\t" +\
+                            str(rateArrays[2].weight_idx) + "\t" + str(rateArrays[2].weight_total) + "\t\t"
+                        
+                        csv_writer.write_row(csv_row)
+
+                        # 2行目組み立て
+                        csv_row = str(rateArrays[0].jokey_idx) + "\t" + str(rateArrays[0].jokey_total) + "\t" +\
+                            str(rateArrays[0].trainer_idx) + "\t" + str(rateArrays[0].trainer_total) + "\t" +\
+                            str(rateArrays[0].f_idx) + "\t" + str(rateArrays[0].f_total) + "\t" +\
+                            str(rateArrays[0].ff_idx) + "\t" + str(rateArrays[0].ff_total) + "\t" +\
+                            str(rateArrays[0].mf_idx) + "\t" + str(rateArrays[0].mf_total) + "\t" +\
+                            str(rateArrays[0].pre_race_idx) + "\t" + str(rateArrays[1].pre_race_total) + "\t\t" +\
+                            str(rateArrays[1].jokey_idx) + "\t" + str(rateArrays[1].jokey_total) + "\t" +\
+                            str(rateArrays[1].trainer_idx) + "\t" + str(rateArrays[1].trainer_total) + "\t" +\
+                            str(rateArrays[1].f_idx) + "\t" + str(rateArrays[1].f_total) + "\t" +\
+                            str(rateArrays[1].ff_idx) + "\t" + str(rateArrays[1].ff_total) + "\t" +\
+                            str(rateArrays[1].mf_idx) + "\t" + str(rateArrays[1].mf_total) + "\t" +\
+                            str(rateArrays[1].pre_race_idx) + "\t" + str(rateArrays[1].pre_race_total) + "\t\t" +\
+                            str(rateArrays[2].jokey_idx) + "\t" + str(rateArrays[2].jokey_total) + "\t" +\
+                            str(rateArrays[2].trainer_idx) + "\t" + str(rateArrays[2].trainer_total) + "\t" +\
+                            str(rateArrays[2].f_idx) + "\t" + str(rateArrays[2].f_total) + "\t" +\
+                            str(rateArrays[2].ff_idx) + "\t" + str(rateArrays[2].ff_total) + "\t" +\
+                            str(rateArrays[2].mf_idx) + "\t" + str(rateArrays[2].mf_total) + "\t" +\
+                            str(rateArrays[2].pre_race_idx) + "\t" + str(rateArrays[2].pre_race_total) + "\t\t"                                          
+                        # csvに出力
+                        csv_writer.write_row(csv_row)                       
+                        pass
+
+                    
+                    
 
                             
 
-                        h_index = h_index + 1
 
 
 

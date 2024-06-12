@@ -92,47 +92,446 @@ class PostgresClient:
 
 
     # 馬情報の登録
+    ##############################################################################################
 
-    def select_nar_race_result(self, nar_race_result_list : List[NarRaceResultObj]) :
-        # PostgreSQLデータベースへの接続
-        conn = psycopg2.connect(
-            dbname="chessdb",
-            user="root",
-            password="secret",
-            host="192.168.56.18",
-            port="5432"
-        )
-        # カーソルオブジェクトを作成
-        cur = conn.cursor()
-        # 検索クエリ
-        select_query = """
-        SELECT 
-            trainer_name, 
-            AVG(position) AS avg_position,
-            SUM(CASE WHEN position = 1 THEN 1 ELSE 0 END) AS first_place_count,
-            SUM(CASE WHEN position = 2 THEN 1 ELSE 0 END) AS second_place_count,
-            SUM(CASE WHEN position = 3 THEN 1 ELSE 0 END) AS third_place_count,                        
-            AVG(corner_position_rate) AS avg_corner_position_rate, 
-            COUNT(trainer_name) AS trainer_count
-        FROM 
-            nar_race_results
-        WHERE 
-            ba = '大井' AND 
-            rule = '一般' AND 
-            distance = 1600 AND
-            trainer_name = '的場直'
-        GROUP BY 
-            trainer_name
-        ORDER BY avg_position ASC;
-        """
+###########################################################################
+    def get_sex_stats(self, ba, distance, ground_condition, rule, sex):
+        try:
+            # PostgreSQLデータベースへの接続
+            conn = psycopg2.connect(
+                dbname="chessdb",
+                user="root",
+                password="secret",
+                host="192.168.56.18",
+                port="5432"
+            )
+            cur = conn.cursor()
 
-#  trainer_name |    avg_position    | first_place_count | second_place_count | third_place_count | avg_corner_position_rate | trainer_count
-# --------------+--------------------+-------------------+--------------------+-------------------+--------------------------+---------------
-#  的場直       | 6.2000000000000000 |                 0 |                  3 |                 1 |      33.3000000000000000 |            10
-        # データを挿入
-        cur.execute(select_query)
-        # カーソルと接続を閉じる
-        cur.close()
-        conn.close()
+            # SQLクエリ
+            query = """
+            SELECT
+                AVG(position) AS average_position,
+                COUNT(*) AS total_races,
+                AVG(corner_position_rate) AS avg_corner_position_rate, 
+                COUNT(*) AS total_races,
+                AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                COUNT(*) AS total_races
+            FROM
+                nar_race_results
+            WHERE
+                ba = %s AND
+                distance = %s AND
+                ground_condition = %s AND
+                rule = %s AND
+                sex = %s
+            GROUP BY
+                sex;
+            """
 
-        print("")
+            # クエリの実行
+            cur.execute(query, (ba, distance, ground_condition, rule, sex))
+
+            # 結果を取得
+            results = cur.fetchall()
+
+            # 接続を閉じる
+            cur.close()
+            conn.close()
+
+            return results
+        
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+
+    def get_age_stats(self, ba, distance, ground_condition, rule, age):
+        try:
+            # PostgreSQLデータベースへの接続
+            conn = psycopg2.connect(
+                dbname="chessdb",
+                user="root",
+                password="secret",
+                host="192.168.56.18",
+                port="5432"
+            )
+            cur = conn.cursor()
+
+            # SQLクエリ
+            query = """
+            SELECT
+                AVG(position) AS average_position,
+                COUNT(*) AS total_races,
+                AVG(corner_position_rate) AS avg_corner_position_rate, 
+                COUNT(*) AS total_races,
+                AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                COUNT(*) AS total_races
+            FROM
+                nar_race_results
+            WHERE
+                ba = %s AND
+                distance = %s AND
+                ground_condition = %s AND
+                rule = %s AND
+                age = %s
+            GROUP BY
+                age;
+            """
+
+            # クエリの実行
+            cur.execute(query, (ba, distance, ground_condition, rule, age))
+
+            # 結果を取得
+            results = cur.fetchall()
+
+            # 接続を閉じる
+            cur.close()
+            conn.close()
+
+            return results
+        
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+
+    def get_owner_name_stats(self, ba, distance, ground_condition, rule, owner_name):
+            try:
+                # PostgreSQLデータベースへの接続
+                conn = psycopg2.connect(
+                    dbname="chessdb",
+                    user="root",
+                    password="secret",
+                    host="192.168.56.18",
+                    port="5432"
+                )
+                cur = conn.cursor()
+
+                # SQLクエリ
+                query = """
+                SELECT
+                    AVG(position) AS average_position,
+                    COUNT(*) AS total_races,
+                    AVG(corner_position_rate) AS avg_corner_position_rate, 
+                    COUNT(*) AS total_races,
+                    AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                    COUNT(*) AS total_races
+                FROM
+                    nar_race_results
+                WHERE
+                    ba = %s AND
+                    distance = %s AND
+                    ground_condition = %s AND
+                    rule = %s AND
+                    owner_name = %s
+                GROUP BY
+                    owner_name;
+                """
+
+                # クエリの実行
+                cur.execute(query, (ba, distance, ground_condition, rule, owner_name))
+
+                # 結果を取得
+                results = cur.fetchall()
+
+                # 接続を閉じる
+                cur.close()
+                conn.close()
+
+                return results
+            
+            except Exception as e:
+                print(f"Error: {e}")
+                return None
+
+    def get_farm_stats(self, ba, distance, ground_condition, rule, farm):
+            try:
+                # PostgreSQLデータベースへの接続
+                conn = psycopg2.connect(
+                    dbname="chessdb",
+                    user="root",
+                    password="secret",
+                    host="192.168.56.18",
+                    port="5432"
+                )
+                cur = conn.cursor()
+
+                # SQLクエリ
+                query = """
+                SELECT
+                    AVG(position) AS average_position,
+                    COUNT(*) AS total_races,
+                    AVG(corner_position_rate) AS avg_corner_position_rate, 
+                    COUNT(*) AS total_races,
+                    AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                    COUNT(*) AS total_races
+                FROM
+                    nar_race_results
+                WHERE
+                    ba = %s AND
+                    distance = %s AND
+                    ground_condition = %s AND
+                    rule = %s AND
+                    farm = %s
+                GROUP BY
+                    farm;
+                """
+
+                # クエリの実行
+                cur.execute(query, (ba, distance, ground_condition, rule, farm))
+
+                # 結果を取得
+                results = cur.fetchall()
+
+                # 接続を閉じる
+                cur.close()
+                conn.close()
+
+                return results
+            
+            except Exception as e:
+                print(f"Error: {e}")
+                return None
+
+    def get_jockey_stats(self, ba, distance, ground_condition, rule, jokey_name):
+        try:
+            # PostgreSQLデータベースへの接続
+            conn = psycopg2.connect(
+                dbname="chessdb",
+                user="root",
+                password="secret",
+                host="192.168.56.18",
+                port="5432"
+            )
+            cur = conn.cursor()
+
+            # SQLクエリ
+            query = """
+            SELECT
+                AVG(position) AS average_position,
+                COUNT(*) AS total_races,
+                AVG(corner_position_rate) AS avg_corner_position_rate, 
+                COUNT(*) AS total_races,
+                AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                COUNT(*) AS total_races
+            FROM
+                nar_race_results
+            WHERE
+                ba = %s AND
+                distance = %s AND
+                ground_condition = %s AND
+                rule = %s AND
+                jokey_name = %s
+            GROUP BY
+                jokey_name;
+            """
+
+            # クエリの実行
+            cur.execute(query, (ba, distance, ground_condition, rule, jokey_name))
+
+            # 結果を取得
+            results = cur.fetchall()
+
+            # 接続を閉じる
+            cur.close()
+            conn.close()
+
+            return results
+        
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+
+    def get_trainer_name_stats(self, ba, distance, ground_condition, rule, trainer_name):
+        try:
+            # PostgreSQLデータベースへの接続
+            conn = psycopg2.connect(
+                dbname="chessdb",
+                user="root",
+                password="secret",
+                host="192.168.56.18",
+                port="5432"
+            )
+            cur = conn.cursor()
+
+            # SQLクエリ
+            query = """
+            SELECT
+                AVG(position) AS average_position,
+                COUNT(*) AS total_races,
+                AVG(corner_position_rate) AS avg_corner_position_rate, 
+                COUNT(*) AS total_races,
+                AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                COUNT(*) AS total_races
+            FROM
+                nar_race_results
+            WHERE
+                ba = %s AND
+                distance = %s AND
+                ground_condition = %s AND
+                rule = %s AND
+                trainer_name = %s
+            GROUP BY
+                trainer_name;
+            """
+
+            # クエリの実行
+            cur.execute(query, (ba, distance, ground_condition, rule, trainer_name))
+
+            # 結果を取得
+            results = cur.fetchall()
+
+            # 接続を閉じる
+            cur.close()
+            conn.close()
+
+            return results
+        
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+    
+    def get_f_name_stats(self, ba, distance, ground_condition, rule, f_name):
+        try:
+            # PostgreSQLデータベースへの接続
+            conn = psycopg2.connect(
+                dbname="chessdb",
+                user="root",
+                password="secret",
+                host="192.168.56.18",
+                port="5432"
+            )
+            cur = conn.cursor()
+
+            # SQLクエリ
+            query = """
+            SELECT
+                AVG(position) AS average_position,
+                COUNT(*) AS total_races,
+                AVG(corner_position_rate) AS avg_corner_position_rate, 
+                COUNT(*) AS total_races,
+                AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                COUNT(*) AS total_races
+            FROM
+                nar_race_results
+            WHERE
+                ba = %s AND
+                distance = %s AND
+                ground_condition = %s AND
+                rule = %s AND
+                f_name = %s
+            GROUP BY
+                f_name;
+            """
+
+            # クエリの実行
+            cur.execute(query, (ba, distance, ground_condition, rule, f_name))
+
+            # 結果を取得
+            results = cur.fetchall()
+
+            # 接続を閉じる
+            cur.close()
+            conn.close()
+
+            return results
+        
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+    
+    def get_mf_name_stats(self, ba, distance, ground_condition, rule, mf_name):
+        try:
+            # PostgreSQLデータベースへの接続
+            conn = psycopg2.connect(
+                dbname="chessdb",
+                user="root",
+                password="secret",
+                host="192.168.56.18",
+                port="5432"
+            )
+            cur = conn.cursor()
+
+            # SQLクエリ
+            query = """
+            SELECT
+                AVG(position) AS average_position,
+                COUNT(*) AS total_races,
+                AVG(corner_position_rate) AS avg_corner_position_rate, 
+                COUNT(*) AS total_races,
+                AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                COUNT(*) AS total_races
+            FROM
+                nar_race_results
+            WHERE
+                ba = %s AND
+                distance = %s AND
+                ground_condition = %s AND
+                rule = %s AND
+                mf_name = %s
+            GROUP BY
+                mf_name;
+            """
+
+            # クエリの実行
+            cur.execute(query, (ba, distance, ground_condition, rule, mf_name))
+
+            # 結果を取得
+            results = cur.fetchall()
+
+            # 接続を閉じる
+            cur.close()
+            conn.close()
+
+            return results
+        
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+
+    def get_pre_race_interval_week_stats(self, ba, distance, ground_condition, rule, pre_race_interval_week):
+        try:
+            # PostgreSQLデータベースへの接続
+            conn = psycopg2.connect(
+                dbname="chessdb",
+                user="root",
+                password="secret",
+                host="192.168.56.18",
+                port="5432"
+            )
+            cur = conn.cursor()
+
+            # SQLクエリ
+            query = """
+            SELECT
+                AVG(position) AS average_position,
+                COUNT(*) AS total_races,
+                AVG(corner_position_rate) AS avg_corner_position_rate, 
+                COUNT(*) AS total_races,
+                AVG(last_three_furlong ) AS avg_last_three_furlong_rate,
+                COUNT(*) AS total_races
+            FROM
+                nar_race_results
+            WHERE
+                ba = %s AND
+                distance = %s AND
+                ground_condition = %s AND
+                rule = %s AND
+                pre_race_interval_week = %s
+            GROUP BY
+                pre_race_interval_week;
+            """
+
+            # クエリの実行
+            cur.execute(query, (ba, distance, ground_condition, rule, pre_race_interval_week))
+
+            # 結果を取得
+            results = cur.fetchall()
+
+            # 接続を閉じる
+            cur.close()
+            conn.close()
+
+            return results
+        
+        except Exception as e:
+            print(f"Error: {e}")
+            return None

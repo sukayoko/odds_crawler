@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
         # 場名を指定して呼び出す
         narRaceCardGenerator =  NarRaceCardGenerator("temp", args.dev)
-        narRaceCardGenerator.nar_race_card_generate_main("2024-05-14","大井")
+        narRaceCardGenerator.nar_race_card_generate_main("2024-06-03","大井")
 
         pass
 

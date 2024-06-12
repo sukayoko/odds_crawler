@@ -31,7 +31,7 @@ class NarRaceResultCrawler :
         # 浦和 18
         # 大井 20
         # current_url = "https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/RaceList?k_raceDate=2024%2f05%2f16&k_babaCode=18"
-        current_url = "https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/RaceList?k_raceDate=2023%2f09%2f08&k_babaCode=20"
+        current_url = "https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/RaceList?k_raceDate=2024%2f02%2f28&k_babaCode=20"
         self.chromeDriver.driver.get(current_url)
 
         finish_flag = False
