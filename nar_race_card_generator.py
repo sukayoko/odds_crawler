@@ -350,48 +350,50 @@ class NarRaceCardGenerator :
 
                         # 1行目組み立て
                         # csvに出力
-                        csv_row = str(rateArrays[0].sex_idx) + "\t" + str(rateArrays[0].sex_total) + "\t" +\
-                            str(rateArrays[0].age_idx) + "\t" + str(rateArrays[0].age_total) + "\t" +\
-                            str(rateArrays[0].birth_idx) + "\t" + str(rateArrays[0].birth_total) + "\t" +\
-                            str(rateArrays[0].owner_idx) + "\t" + str(rateArrays[0].owner_total) + "\t" +\
-                            str(rateArrays[0].farm_idx) + "\t" + str(rateArrays[0].farm_total) + "\t" +\
-                            str(rateArrays[0].weight_idx) + "\t" + str(rateArrays[0].weight_total) + "\t\t" +\
-                            str(rateArrays[1].sex_idx) + "\t" + str(rateArrays[1].sex_total) + "\t" +\
-                            str(rateArrays[1].age_idx) + "\t" + str(rateArrays[1].age_total) + "\t" +\
-                            str(rateArrays[1].birth_idx) + "\t" + str(rateArrays[1].birth_total) + "\t" +\
-                            str(rateArrays[1].owner_idx) + "\t" + str(rateArrays[1].owner_total) + "\t" +\
-                            str(rateArrays[1].farm_idx) + "\t" + str(rateArrays[1].farm_total) + "\t" +\
-                            str(rateArrays[1].weight_idx) + "\t" + str(rateArrays[1].weight_total) + "\t\t" +\
-                            str(rateArrays[2].sex_idx) + "\t" + str(rateArrays[2].sex_total) + "\t" +\
-                            str(rateArrays[2].age_idx) + "\t" + str(rateArrays[2].age_total) + "\t" +\
-                            str(rateArrays[2].birth_idx) + "\t" + str(rateArrays[2].birth_total) + "\t" +\
-                            str(rateArrays[2].owner_idx) + "\t" + str(rateArrays[2].owner_total) + "\t" +\
-                            str(rateArrays[2].farm_idx) + "\t" + str(rateArrays[2].farm_total) + "\t" +\
-                            str(rateArrays[2].weight_idx) + "\t" + str(rateArrays[2].weight_total) + "\t\t"
+                        csv_row = str(rateArrays[0].sex_idx) + "\t" +  str(rateArrays[0].age_idx) + "\t" +\
+                            str(rateArrays[0].pre_race_idx) + "\t" + str(rateArrays[0].birth_idx) + "\t" +\
+                            str(rateArrays[0].weight_idx) + "\t" + str(rateArrays[0].jokey_idx) + "\t" +\
+                            str(rateArrays[0].trainer_idx) + "\t" + str(rateArrays[0].f_idx) + "\t" +\
+                            str(rateArrays[0].ff_idx) + "\t" + str(rateArrays[0].mf_idx) + "\t" +\
+                            str(rateArrays[0].farm_idx) + "\t" + str(rateArrays[0].owner_idx) + "\t\t" +\
+                            str(rateArrays[1].sex_idx) + "\t" +  str(rateArrays[1].age_idx) + "\t" +\
+                            str(rateArrays[1].pre_race_idx) + "\t" + str(rateArrays[1].birth_idx) + "\t" +\
+                            str(rateArrays[1].weight_idx) + "\t" + str(rateArrays[1].jokey_idx) + "\t" +\
+                            str(rateArrays[1].trainer_idx) + "\t" + str(rateArrays[1].f_idx) + "\t" +\
+                            str(rateArrays[1].ff_idx) + "\t" + str(rateArrays[1].mf_idx) + "\t" +\
+                            str(rateArrays[1].farm_idx) + "\t" + str(rateArrays[1].owner_idx) + "\t\t" +\
+                            str(rateArrays[2].sex_idx) + "\t" +  str(rateArrays[2].age_idx) + "\t" +\
+                            str(rateArrays[2].pre_race_idx) + "\t" + str(rateArrays[2].birth_idx) + "\t" +\
+                            str(rateArrays[2].weight_idx) + "\t" + str(rateArrays[2].jokey_idx) + "\t" +\
+                            str(rateArrays[2].trainer_idx) + "\t" + str(rateArrays[2].f_idx) + "\t" +\
+                            str(rateArrays[2].ff_idx) + "\t" + str(rateArrays[2].mf_idx) + "\t" +\
+                            str(rateArrays[2].farm_idx) + "\t" + str(rateArrays[2].owner_idx)
+                            
                         
                         csv_writer.write_row(csv_row)
 
                         # 2行目組み立て
-                        csv_row = str(rateArrays[0].jokey_idx) + "\t" + str(rateArrays[0].jokey_total) + "\t" +\
-                            str(rateArrays[0].trainer_idx) + "\t" + str(rateArrays[0].trainer_total) + "\t" +\
-                            str(rateArrays[0].f_idx) + "\t" + str(rateArrays[0].f_total) + "\t" +\
-                            str(rateArrays[0].ff_idx) + "\t" + str(rateArrays[0].ff_total) + "\t" +\
-                            str(rateArrays[0].mf_idx) + "\t" + str(rateArrays[0].mf_total) + "\t" +\
-                            str(rateArrays[0].pre_race_idx) + "\t" + str(rateArrays[1].pre_race_total) + "\t\t" +\
-                            str(rateArrays[1].jokey_idx) + "\t" + str(rateArrays[1].jokey_total) + "\t" +\
-                            str(rateArrays[1].trainer_idx) + "\t" + str(rateArrays[1].trainer_total) + "\t" +\
-                            str(rateArrays[1].f_idx) + "\t" + str(rateArrays[1].f_total) + "\t" +\
-                            str(rateArrays[1].ff_idx) + "\t" + str(rateArrays[1].ff_total) + "\t" +\
-                            str(rateArrays[1].mf_idx) + "\t" + str(rateArrays[1].mf_total) + "\t" +\
-                            str(rateArrays[1].pre_race_idx) + "\t" + str(rateArrays[1].pre_race_total) + "\t\t" +\
-                            str(rateArrays[2].jokey_idx) + "\t" + str(rateArrays[2].jokey_total) + "\t" +\
-                            str(rateArrays[2].trainer_idx) + "\t" + str(rateArrays[2].trainer_total) + "\t" +\
-                            str(rateArrays[2].f_idx) + "\t" + str(rateArrays[2].f_total) + "\t" +\
-                            str(rateArrays[2].ff_idx) + "\t" + str(rateArrays[2].ff_total) + "\t" +\
-                            str(rateArrays[2].mf_idx) + "\t" + str(rateArrays[2].mf_total) + "\t" +\
-                            str(rateArrays[2].pre_race_idx) + "\t" + str(rateArrays[2].pre_race_total) + "\t\t"                                          
+                        csv_row = str(rateArrays[0].sex_total) + "\t" +  str(rateArrays[0].age_total) + "\t" +\
+                            str(rateArrays[0].pre_race_total) + "\t" + str(rateArrays[0].birth_total) + "\t" +\
+                            str(rateArrays[0].weight_total) + "\t" + str(rateArrays[0].jokey_total) + "\t" +\
+                            str(rateArrays[0].trainer_total) + "\t" + str(rateArrays[0].f_total) + "\t" +\
+                            str(rateArrays[0].ff_total) + "\t" + str(rateArrays[0].mf_total) + "\t" +\
+                            str(rateArrays[0].farm_total) + "\t" + str(rateArrays[0].owner_total) + "\t\t" +\
+                            str(rateArrays[1].sex_total) + "\t" +  str(rateArrays[1].age_total) + "\t" +\
+                            str(rateArrays[1].pre_race_total) + "\t" + str(rateArrays[1].birth_total) + "\t" +\
+                            str(rateArrays[1].weight_total) + "\t" + str(rateArrays[1].jokey_total) + "\t" +\
+                            str(rateArrays[1].trainer_total) + "\t" + str(rateArrays[1].f_total) + "\t" +\
+                            str(rateArrays[1].ff_total) + "\t" + str(rateArrays[1].mf_total) + "\t" +\
+                            str(rateArrays[1].farm_total) + "\t" + str(rateArrays[1].owner_total) + "\t\t" +\
+                            str(rateArrays[2].sex_total) + "\t" +  str(rateArrays[2].age_total) + "\t" +\
+                            str(rateArrays[2].pre_race_total) + "\t" + str(rateArrays[2].birth_total) + "\t" +\
+                            str(rateArrays[2].weight_total) + "\t" + str(rateArrays[2].jokey_total) + "\t" +\
+                            str(rateArrays[2].trainer_total) + "\t" + str(rateArrays[2].f_total) + "\t" +\
+                            str(rateArrays[2].ff_total) + "\t" + str(rateArrays[2].mf_total) + "\t" +\
+                            str(rateArrays[2].farm_total) + "\t" + str(rateArrays[2].owner_total)
+                                                              
                         # csvに出力
-                        csv_writer.write_row(csv_row)                       
+                        csv_writer.write_row(csv_row)                
                         pass
 
                     
